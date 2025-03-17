@@ -2,12 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "@/components/ui/sonner";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-}
+import { authService, User } from '@/services/auth-service';
 
 interface AuthContextType {
   user: User | null;
@@ -26,40 +21,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Check if user is already logged in
+    const fetchUser = async () => {
+      setIsLoading(true);
+      try {
+        const currentUser = await authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      
-      // This is a mock login - would connect to a real backend in production
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check for mock credentials (in real app this would be validated on server)
-      if (email === "demo@example.com" && password === "password") {
-        const mockUser = {
-          id: "user-1",
-          email: "demo@example.com",
-          name: "Demo User"
-        };
-        
-        setUser(mockUser);
-        localStorage.setItem('user', JSON.stringify(mockUser));
-        toast.success("Login successful");
-        navigate('/select-database');
-      } else {
-        toast.error("Invalid credentials");
-      }
+      const loggedInUser = await authService.login({ email, password });
+      setUser(loggedInUser);
+      toast.success("Login successful");
+      navigate('/select-database');
     } catch (error) {
-      toast.error("Login failed");
       console.error("Login error:", error);
+      toast.error("Invalid credentials");
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -68,35 +56,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (name: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      
-      // This is a mock registration - would connect to a real backend in production
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock registration (in real app this would be handled by the server)
-      const mockUser = {
-        id: `user-${Date.now()}`,
-        email,
-        name
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('user', JSON.stringify(mockUser));
+      const newUser = await authService.register({ name, email, password });
+      setUser(newUser);
       toast.success("Registration successful");
       navigate('/select-database');
     } catch (error) {
-      toast.error("Registration failed");
       console.error("Registration error:", error);
+      toast.error("Registration failed");
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.success("Logged out successfully");
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      toast.success("Logged out successfully");
+      navigate('/login');
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Logout failed");
+    }
   };
 
   return (
