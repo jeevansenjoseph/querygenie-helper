@@ -1,3 +1,4 @@
+
 import { apiService } from './api-service';
 import { ENDPOINTS } from './api-config';
 
@@ -23,12 +24,30 @@ interface AuthResponse {
   token: string;
 }
 
+// Demo user data for offline testing
+const DEMO_USER: User = {
+  id: 'demo-123',
+  email: 'demo@example.com',
+  name: 'Demo User'
+};
+
+const DEMO_TOKEN = 'demo-jwt-token-12345';
+
 export const authService = {
   /**
    * Log in a user
    */
   async login(credentials: LoginRequest): Promise<User> {
     try {
+      // Check if using demo credentials
+      if (credentials.email === 'demo@example.com' && credentials.password === 'password') {
+        // Handle demo login locally
+        localStorage.setItem('authToken', DEMO_TOKEN);
+        localStorage.setItem('user', JSON.stringify(DEMO_USER));
+        return DEMO_USER;
+      }
+      
+      // Regular API login
       const response = await apiService.post<AuthResponse>(
         ENDPOINTS.AUTH.LOGIN,
         credentials,
@@ -51,6 +70,11 @@ export const authService = {
    */
   async register(userData: RegisterRequest): Promise<User> {
     try {
+      // Check if registering with demo email
+      if (userData.email === 'demo@example.com') {
+        throw new Error('Demo email cannot be used for registration');
+      }
+      
       const response = await apiService.post<AuthResponse>(
         ENDPOINTS.AUTH.REGISTER,
         userData,
@@ -73,7 +97,16 @@ export const authService = {
    */
   async logout(): Promise<void> {
     try {
-      // Call logout endpoint (if needed)
+      // Don't attempt API call for demo user
+      const user = localStorage.getItem('user');
+      if (user && JSON.parse(user).email === 'demo@example.com') {
+        // Simply clear storage for demo user
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        return;
+      }
+      
+      // Regular logout via API
       await apiService.post(ENDPOINTS.AUTH.LOGOUT, {});
     } catch (error) {
       console.error('Logout error:', error);
@@ -100,6 +133,11 @@ export const authService = {
       const token = localStorage.getItem('authToken');
       if (!token) {
         return null;
+      }
+      
+      // Don't try to fetch from API for demo token
+      if (token === DEMO_TOKEN) {
+        return DEMO_USER;
       }
       
       const user = await apiService.get<User>(ENDPOINTS.AUTH.ME);
