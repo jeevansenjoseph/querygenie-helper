@@ -92,28 +92,28 @@ export const apiService = {
   /**
    * Shorthand for GET requests
    */
-  get<T = any>(endpoint: string, options: Omit<ApiOptions, 'endpoint' | 'method'> = {}) {
+  get<T = any>(endpoint: string, options: Omit<ApiOptions, 'endpoint' | 'method'> = {}): Promise<T> {
     return this.request<T>({ ...options, endpoint, method: 'GET' });
   },
   
   /**
    * Shorthand for POST requests
    */
-  post<T = any>(endpoint: string, body: any, options: Omit<ApiOptions, 'endpoint' | 'method' | 'body'> = {}) {
+  post<T = any>(endpoint: string, body: any, options: Omit<ApiOptions, 'endpoint' | 'method' | 'body'> = {}): Promise<T> {
     return this.request<T>({ ...options, endpoint, method: 'POST', body });
   },
   
   /**
    * Shorthand for PUT requests
    */
-  put<T = any>(endpoint: string, body: any, options: Omit<ApiOptions, 'endpoint' | 'method' | 'body'> = {}) {
+  put<T = any>(endpoint: string, body: any, options: Omit<ApiOptions, 'endpoint' | 'method' | 'body'> = {}): Promise<T> {
     return this.request<T>({ ...options, endpoint, method: 'PUT', body });
   },
   
   /**
    * Shorthand for DELETE requests
    */
-  delete<T = any>(endpoint: string, options: Omit<ApiOptions, 'endpoint' | 'method'> = {}) {
+  delete<T = any>(endpoint: string, options: Omit<ApiOptions, 'endpoint' | 'method'> = {}): Promise<T> {
     return this.request<T>({ ...options, endpoint, method: 'DELETE' });
   },
 };

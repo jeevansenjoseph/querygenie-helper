@@ -1,13 +1,12 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import AuthGuard from '@/components/layout/AuthGuard';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Clipboard, Eye, FileDown, Terminal } from 'lucide-react';
+import { ArrowLeft, Clipboard, Code, Eye, FileDown } from 'lucide-react';
 import { generateMockNoSqlResults } from '@/lib/database';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const NoSqlResults = () => {
   const navigate = useNavigate();
@@ -85,7 +84,7 @@ const NoSqlResults = () => {
             <Card className="p-4 mb-6 bg-muted/40">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-sm font-medium flex items-center">
-                  <Terminal className="mr-2 h-4 w-4" />
+                  <Code className="mr-2 h-4 w-4" />
                   Executed Query
                 </h3>
                 <Button 

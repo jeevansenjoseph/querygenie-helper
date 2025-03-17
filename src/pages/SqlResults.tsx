@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Clipboard, Eye, FileDown, Terminal } from 'lucide-react';
 import { generateMockSqlResults } from '@/lib/database';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const SqlResults = () => {
   const navigate = useNavigate();

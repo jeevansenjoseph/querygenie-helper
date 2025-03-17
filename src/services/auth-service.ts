@@ -1,7 +1,5 @@
-
 import { apiService } from './api-service';
 import { ENDPOINTS } from './api-config';
-import { toast } from "@/components/ui/sonner";
 
 export interface User {
   id: string;

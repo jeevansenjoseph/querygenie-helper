@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, Clipboard, Database, Loader2, Sparkles } from 'lucide-react';
 import { translateToNoSql, databaseOptions, mockSchemas } from '@/lib/database';
-import { toast } from "@/components/ui/sonner";
+import { toast } from "@/lib/toast";
 
 const NoSqlGeneration = () => {
   const navigate = useNavigate();
