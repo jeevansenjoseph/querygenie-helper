@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -60,7 +61,10 @@ const SelectDatabase = () => {
                   <Label htmlFor={database.id} className="flex items-center gap-2 cursor-pointer">
                     <Database className="w-4 h-4" />
                     <span>{database.name}</span>
-                    {database.isCloud && <Server className="w-4 h-4 text-muted-foreground" />}
+                    {/* Display server icon if database is cloud-based */}
+                    {database.hasOwnProperty('isCloud') && database.isCloud && 
+                      <Server className="w-4 h-4 text-muted-foreground" />
+                    }
                   </Label>
                 </div>
               ))}
