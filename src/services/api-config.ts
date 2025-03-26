@@ -22,3 +22,10 @@ export const ENDPOINTS = {
 
 // Request timeout in milliseconds
 export const REQUEST_TIMEOUT = 30000;
+
+// Unified API config object
+export const API_CONFIG = {
+  BASE_URL: API_BASE_URL,
+  ENDPOINTS,
+  REQUEST_TIMEOUT
+};

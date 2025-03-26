@@ -24,13 +24,17 @@ export interface NoSqlQueryResult {
   [key: string]: any;
 }
 
+interface QueryResponse {
+  query: string;
+}
+
 export const databaseService = {
   /**
    * Generate SQL query from natural language
    */
   async generateSqlQuery(request: QueryGenerationRequest): Promise<string> {
     try {
-      const response = await apiService.post<{ query: string }>(
+      const response = await apiService.post(
         ENDPOINTS.DATABASE.SQL_GENERATE,
         request
       );
@@ -46,7 +50,7 @@ export const databaseService = {
    */
   async executeSqlQuery(request: QueryExecutionRequest): Promise<SqlQueryResult> {
     try {
-      const response = await apiService.post<SqlQueryResult>(
+      const response = await apiService.post(
         ENDPOINTS.DATABASE.SQL_EXECUTE,
         request
       );
@@ -62,7 +66,7 @@ export const databaseService = {
    */
   async generateNoSqlQuery(request: QueryGenerationRequest): Promise<string> {
     try {
-      const response = await apiService.post<{ query: string }>(
+      const response = await apiService.post(
         ENDPOINTS.DATABASE.NOSQL_GENERATE,
         request
       );
@@ -78,7 +82,7 @@ export const databaseService = {
    */
   async executeNoSqlQuery(request: QueryExecutionRequest): Promise<NoSqlQueryResult[]> {
     try {
-      const response = await apiService.post<NoSqlQueryResult[]>(
+      const response = await apiService.post(
         ENDPOINTS.DATABASE.NOSQL_EXECUTE,
         request
       );
@@ -96,7 +100,7 @@ export const databaseService = {
     try {
       // This endpoint is not defined in the API_ENDPOINTS
       // You would need to add it and implement it in the backend
-      return apiService.get<DatabaseOption[]>('/databases');
+      return apiService.get('/databases');
     } catch (error) {
       console.error('Get databases error:', error);
       throw error;

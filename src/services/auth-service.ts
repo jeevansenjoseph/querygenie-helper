@@ -48,7 +48,7 @@ export const authService = {
       }
       
       // Regular API login
-      const response = await apiService.post<AuthResponse>(
+      const response = await apiService.post(
         ENDPOINTS.AUTH.LOGIN,
         credentials,
         { withAuth: false }
@@ -75,7 +75,7 @@ export const authService = {
         throw new Error('Demo email cannot be used for registration');
       }
       
-      const response = await apiService.post<AuthResponse>(
+      const response = await apiService.post(
         ENDPOINTS.AUTH.REGISTER,
         userData,
         { withAuth: false }
@@ -140,7 +140,7 @@ export const authService = {
         return DEMO_USER;
       }
       
-      const user = await apiService.get<User>(ENDPOINTS.AUTH.ME);
+      const user = await apiService.get(ENDPOINTS.AUTH.ME);
       localStorage.setItem('user', JSON.stringify(user));
       return user;
     } catch (error) {
