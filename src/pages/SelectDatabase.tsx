@@ -62,7 +62,7 @@ const SelectDatabase = () => {
                     <Database className="w-4 h-4" />
                     <span>{database.name}</span>
                     {/* Display server icon if database is cloud-based */}
-                    {database.hasOwnProperty('isCloud') && database.isCloud && 
+                    {'isCloud' in database && database.isCloud && 
                       <Server className="w-4 h-4 text-muted-foreground" />
                     }
                   </Label>

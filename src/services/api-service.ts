@@ -1,119 +1,98 @@
 
-import { API_BASE_URL, REQUEST_TIMEOUT } from './api-config';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import { API_CONFIG } from './api-config';
 
-interface ApiOptions {
-  endpoint: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  body?: any;
-  headers?: Record<string, string>;
-  withAuth?: boolean;
-}
+const axiosInstance = axios.create({
+  baseURL: API_CONFIG.BASE_URL,
+});
 
-class ApiError extends Error {
-  status: number;
-  data: any;
-  
-  constructor(message: string, status: number, data: any) {
-    super(message);
-    this.name = 'ApiError';
-    this.status = status;
-    this.data = data;
+// Add a request interceptor to add auth token
+axiosInstance.interceptors.request.use(
+  (config) => {
+    // Get token from storage
+    const token = localStorage.getItem('auth_token');
+    
+    // If token exists, add it to the request headers
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Add a response interceptor for error handling
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle general errors
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error('Response error:', error.response.status, error.response.data);
+      
+      // Handle authentication errors (401 Unauthorized, 403 Forbidden)
+      if (error.response.status === 401 || error.response.status === 403) {
+        // Clear auth token
+        localStorage.removeItem('auth_token');
+        
+        // Redirect to login page if not already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('Request error:', error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error('Error:', error.message);
+    }
+    
+    return Promise.reject(error);
   }
-}
+);
 
+// Generic API service
 export const apiService = {
   /**
-   * Makes an API request
+   * Make a GET request
    */
-  async request<T = any>({
-    endpoint,
-    method = 'GET',
-    body,
-    headers = {},
-    withAuth = true,
-  }: ApiOptions): Promise<T> {
-    // Get auth token from localStorage if withAuth is true
-    const token = withAuth ? localStorage.getItem('authToken') : null;
-    
-    // Prepare request options
-    const requestOptions: RequestInit = {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        ...headers,
-      },
-      // Add body if method is not GET
-      ...(method !== 'GET' && body ? { body: JSON.stringify(body) } : {}),
-    };
-
-    try {
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-      
-      // Make the request
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...requestOptions,
-        signal: controller.signal,
-      });
-      
-      // Clear timeout
-      clearTimeout(timeoutId);
-      
-      // Parse response
-      const data = await response.json();
-      
-      // Check if response is ok
-      if (!response.ok) {
-        throw new ApiError(
-          data.message || 'Something went wrong',
-          response.status,
-          data
-        );
-      }
-      
-      return data as T;
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      } else if (error instanceof Error && error.name === 'AbortError') {
-        throw new ApiError('Request timeout', 408, { message: 'Request took too long to complete' });
-      }
-      
-      throw new ApiError(
-        error instanceof Error ? error.message : 'Unknown error',
-        500,
-        { message: 'An unexpected error occurred' }
-      );
-    }
+  async get(url: string, config?: AxiosRequestConfig) {
+    const response = await axiosInstance.get(url, config);
+    return response.data;
   },
   
   /**
-   * Shorthand for GET requests
+   * Make a POST request
    */
-  get<T = any>(endpoint: string, options: Omit<ApiOptions, 'endpoint' | 'method'> = {}): Promise<T> {
-    return this.request<T>({ ...options, endpoint, method: 'GET' });
+  async post(url: string, data?: any, config?: AxiosRequestConfig) {
+    const response = await axiosInstance.post(url, data, config);
+    return response.data;
   },
   
   /**
-   * Shorthand for POST requests
+   * Make a PUT request
    */
-  post<T = any>(endpoint: string, body: any, options: Omit<ApiOptions, 'endpoint' | 'method' | 'body'> = {}): Promise<T> {
-    return this.request<T>({ ...options, endpoint, method: 'POST', body });
+  async put(url: string, data?: any, config?: AxiosRequestConfig) {
+    const response = await axiosInstance.put(url, data, config);
+    return response.data;
   },
   
   /**
-   * Shorthand for PUT requests
+   * Make a PATCH request
    */
-  put<T = any>(endpoint: string, body: any, options: Omit<ApiOptions, 'endpoint' | 'method' | 'body'> = {}): Promise<T> {
-    return this.request<T>({ ...options, endpoint, method: 'PUT', body });
+  async patch(url: string, data?: any, config?: AxiosRequestConfig) {
+    const response = await axiosInstance.patch(url, data, config);
+    return response.data;
   },
   
   /**
-   * Shorthand for DELETE requests
+   * Make a DELETE request
    */
-  delete<T = any>(endpoint: string, options: Omit<ApiOptions, 'endpoint' | 'method'> = {}): Promise<T> {
-    return this.request<T>({ ...options, endpoint, method: 'DELETE' });
-  },
+  async delete(url: string, config?: AxiosRequestConfig) {
+    const response = await axiosInstance.delete(url, config);
+    return response.data;
+  }
 };
