@@ -3,14 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import QueryGenerator from "./pages/QueryGenerator";
 import NotFound from "./pages/NotFound";
-import SqlGeneration from "./pages/SqlGeneration";
 import AuthGuard from "./components/layout/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -34,14 +33,12 @@ const App = () => (
                 </AuthGuard>
               } 
             />
-            <Route 
-              path="/sql-generation" 
-              element={
-                <AuthGuard>
-                  <SqlGeneration />
-                </AuthGuard>
-              } 
-            />
+            {/* Redirect from select-database to query-generator */}
+            <Route path="/select-database" element={<Navigate to="/query-generator" replace />} />
+            <Route path="/sql-generation" element={<Navigate to="/query-generator" replace />} />
+            <Route path="/nosql-generation" element={<Navigate to="/query-generator" replace />} />
+            <Route path="/sql-results" element={<Navigate to="/query-generator" replace />} />
+            <Route path="/nosql-results" element={<Navigate to="/query-generator" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
