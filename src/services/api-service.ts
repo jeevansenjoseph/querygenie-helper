@@ -9,8 +9,16 @@ const axiosInstance = axios.create({
 // Add a request interceptor to add auth token
 axiosInstance.interceptors.request.use(
   (config) => {
+    // For login and register endpoints, we don't need to add the token
+    if (config.url && (
+      config.url.includes('/auth/login/') || 
+      config.url.includes('/auth/register/')
+    )) {
+      return config;
+    }
+    
     // Get token from storage
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('authToken');
     
     // If token exists, add it to the request headers
     if (token) {
@@ -35,7 +43,7 @@ axiosInstance.interceptors.response.use(
       // Handle authentication errors (401 Unauthorized, 403 Forbidden)
       if (error.response.status === 401 || error.response.status === 403) {
         // Clear auth token
-        localStorage.removeItem('auth_token');
+        localStorage.removeItem('authToken');
         
         // Redirect to login page if not already there
         if (window.location.pathname !== '/login') {

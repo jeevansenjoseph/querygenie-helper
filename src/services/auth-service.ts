@@ -1,4 +1,3 @@
-
 import { apiService } from './api-service';
 import { ENDPOINTS } from './api-config';
 
@@ -47,11 +46,10 @@ export const authService = {
         return DEMO_USER;
       }
       
-      // Regular API login
+      // Regular API login - without using the withAuth property
       const response = await apiService.post(
         ENDPOINTS.AUTH.LOGIN,
-        credentials,
-        { withAuth: false }
+        credentials
       );
       
       // Store token
@@ -77,8 +75,7 @@ export const authService = {
       
       const response = await apiService.post(
         ENDPOINTS.AUTH.REGISTER,
-        userData,
-        { withAuth: false }
+        userData
       );
       
       // Store token
