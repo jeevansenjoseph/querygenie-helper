@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import QueryGenerator from "./pages/QueryGenerator";
 import NotFound from "./pages/NotFound";
+import SqlGeneration from "./pages/SqlGeneration";
 import AuthGuard from "./components/layout/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,14 @@ const App = () => (
               element={
                 <AuthGuard>
                   <QueryGenerator />
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/sql-generation" 
+              element={
+                <AuthGuard>
+                  <SqlGeneration />
                 </AuthGuard>
               } 
             />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -9,34 +10,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, Clipboard, Database, Loader2, Sparkles } from 'lucide-react';
 import { translateToSql, databaseOptions, mockSchemas } from '@/lib/database';
 import { toast } from "@/lib/toast";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 const SqlGeneration = () => {
   const navigate = useNavigate();
   const [naturalLanguage, setNaturalLanguage] = useState('');
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedDatabase, setSelectedDatabase] = useState<string | null>(null);
-  const [databaseName, setDatabaseName] = useState('');
+  const [selectedDatabase, setSelectedDatabase] = useState<string>('mysql');
+  const [databaseName, setDatabaseName] = useState('MySQL');
 
   useEffect(() => {
-    // Check if database has been selected
-    const storedDb = localStorage.getItem('selectedDatabase');
-    const storedDbType = localStorage.getItem('selectedDatabaseType');
-    
-    if (!storedDb || storedDbType !== 'sql') {
-      toast.error('Please select a SQL database first');
-      navigate('/select-database');
-      return;
-    }
-    
-    setSelectedDatabase(storedDb);
-    
     // Find database info
-    const dbInfo = databaseOptions.find(db => db.id === storedDb);
+    const dbInfo = databaseOptions.find(db => db.id === selectedDatabase);
     if (dbInfo) {
       setDatabaseName(dbInfo.name);
     }
-  }, [navigate]);
+  }, [selectedDatabase]);
+
+  const handleDatabaseChange = (value: string) => {
+    setSelectedDatabase(value);
+    // Store the selected database in localStorage
+    localStorage.setItem('selectedDatabase', value);
+    localStorage.setItem('selectedDatabaseType', 'sql');
+  };
 
   const handleGenerate = () => {
     if (!naturalLanguage.trim()) {
@@ -48,7 +51,7 @@ const SqlGeneration = () => {
     
     // Simulating API call delay
     setTimeout(() => {
-      const query = translateToSql(naturalLanguage, selectedDatabase || '');
+      const query = translateToSql(naturalLanguage, selectedDatabase);
       setGeneratedQuery(query);
       setIsGenerating(false);
       toast.success('Query generated successfully');
@@ -96,14 +99,26 @@ const SqlGeneration = () => {
     setNaturalLanguage(example);
   };
 
+  const sqlDatabases = databaseOptions.filter(db => db.type === 'sql');
+
   return (
     <AuthGuard>
       <AppLayout>
         <div className="container-lg py-8 animate-fade-in">
           <div className="space-y-2 text-center mb-8">
-            <div className="inline-flex items-center gap-2 text-muted-foreground mb-2">
+            <div className="inline-flex items-center justify-center gap-4 text-muted-foreground mb-2">
               <Database className="w-5 h-5" />
               <span>Using <strong>{databaseName}</strong></span>
+              <Select value={selectedDatabase} onValueChange={handleDatabaseChange}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Select database" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sqlDatabases.map(db => (
+                    <SelectItem key={db.id} value={db.id}>{db.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <h1 className="text-3xl font-bold tracking-tighter">SQL Query Generation</h1>
             <p className="text-muted-foreground">
@@ -213,7 +228,7 @@ const SqlGeneration = () => {
                   <h4 className="text-sm font-medium">Available Tables</h4>
                   <div className="w-full text-xs text-muted-foreground">
                     <pre className="overflow-auto bg-muted p-2 rounded-md">
-                      {selectedDatabase === 'mysql' && JSON.stringify(mockSchemas.mysql, null, 2)}
+                      {JSON.stringify(mockSchemas[selectedDatabase as keyof typeof mockSchemas] || mockSchemas.mysql, null, 2)}
                     </pre>
                   </div>
                 </CardFooter>
