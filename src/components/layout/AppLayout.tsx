@@ -1,5 +1,5 @@
 
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import {
   Database, 
   Home, 
   LogOut, 
+  PanelLeft,
   Terminal
 } from 'lucide-react';
 
@@ -18,6 +19,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Determine active route for navigation highlighting
   const isActive = (path: string) => {
@@ -59,7 +61,20 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       <div className="flex-1 flex">
         {/* Sidebar */}
         {user && (
-          <aside className="w-16 md:w-64 border-r bg-white/80 backdrop-blur-md h-[calc(100vh-4rem)] sticky top-16">
+          <aside 
+            className={`${sidebarCollapsed ? 'w-16' : 'w-16 md:w-64'} transition-all duration-300 border-r bg-white/80 backdrop-blur-md h-[calc(100vh-4rem)] sticky top-16`}
+          >
+            <div className="flex justify-end p-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="text-muted-foreground hover:text-foreground md:flex"
+              >
+                <PanelLeft className="h-5 w-5" />
+                <span className="sr-only">Toggle Sidebar</span>
+              </Button>
+            </div>
             <nav className="flex flex-col p-2 md:p-4 gap-1 md:gap-2">
               <Button
                 variant={isActive('/query-generator') ? "secondary" : "ghost"}
@@ -67,7 +82,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 onClick={() => navigate('/query-generator')}
               >
                 <Terminal className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">Query Generator</span>
+                <span className={`${sidebarCollapsed ? 'hidden' : 'hidden md:inline'}`}>Query Generator</span>
               </Button>
               
               {/* Home button for future use */}
@@ -77,7 +92,7 @@ const AppLayout = ({ children }: AppLayoutProps) => {
                 onClick={() => navigate('/')}
               >
                 <Home className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">Home</span>
+                <span className={`${sidebarCollapsed ? 'hidden' : 'hidden md:inline'}`}>Home</span>
               </Button>
             </nav>
           </aside>

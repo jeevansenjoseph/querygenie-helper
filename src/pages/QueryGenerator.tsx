@@ -349,8 +349,8 @@ const QueryGenerator = () => {
 
   return (
     <AppLayout>
-      <div className="container-lg py-4 animate-fade-in">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 h-[calc(100vh-120px)]">
+      <div className="container-xl py-4 animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-120px)]">
           {/* Left Column - Query Generation */}
           <div className="flex flex-col h-full">
             <div className="flex justify-between items-center mb-4">
@@ -451,27 +451,29 @@ const QueryGenerator = () => {
                       >
                         <p className="whitespace-pre-wrap break-words">{message.text}</p>
                         {message.query && (
-                          <div className="mt-2">
-                            <div className="bg-background bg-opacity-10 rounded p-2 relative font-mono text-sm">
-                              <pre className="overflow-x-auto">{message.query}</pre>
-                              <div className="flex absolute top-2 right-2 space-x-1">
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-6 w-6 p-0 bg-black bg-opacity-20 hover:bg-opacity-30"
-                                  onClick={() => handleCopyQuery(message.query!)}
-                                >
-                                  <Clipboard className="h-3 w-3" />
-                                </Button>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className={`h-6 w-6 p-0 ${message.isExecuted ? 'bg-green-500 bg-opacity-20 hover:bg-opacity-30' : 'bg-black bg-opacity-20 hover:bg-opacity-30'}`}
-                                  onClick={() => handleExecuteQuery(message.query!)}
-                                >
-                                  <Sparkles className="h-3 w-3" />
-                                </Button>
-                              </div>
+                          <div className="mt-2 relative">
+                            <div className="bg-background bg-opacity-10 rounded p-2 font-mono text-sm">
+                              <pre className="overflow-x-auto pr-2">{message.query}</pre>
+                            </div>
+                            <div className="flex absolute -top-3 right-0 space-x-1">
+                              <Button 
+                                size="sm"
+                                variant="secondary"
+                                className="h-8 rounded-full"
+                                onClick={() => handleCopyQuery(message.query!)}
+                              >
+                                <Clipboard className="h-4 w-4 mr-1" />
+                                Copy
+                              </Button>
+                              <Button 
+                                size="sm"
+                                variant={message.isExecuted ? "ghost" : "secondary"}
+                                className={`h-8 rounded-full ${message.isExecuted ? 'bg-green-100 text-green-700' : ''}`}
+                                onClick={() => handleExecuteQuery(message.query!)}
+                              >
+                                <Sparkles className="h-4 w-4 mr-1" />
+                                {message.isExecuted ? 'Executed' : 'Execute'}
+                              </Button>
                             </div>
                           </div>
                         )}
