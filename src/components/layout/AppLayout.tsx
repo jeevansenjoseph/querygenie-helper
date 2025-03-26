@@ -6,13 +6,8 @@ import { Button } from "@/components/ui/button";
 import { 
   Database, 
   Home, 
-  KeyRound, 
   LogOut, 
-  Moon, 
-  Settings, 
-  Sun, 
-  Terminal, 
-  User
+  Terminal
 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -67,55 +62,29 @@ const AppLayout = ({ children }: AppLayoutProps) => {
           <aside className="w-16 md:w-64 border-r bg-white/80 backdrop-blur-md h-[calc(100vh-4rem)] sticky top-16">
             <nav className="flex flex-col p-2 md:p-4 gap-1 md:gap-2">
               <Button
-                variant={isActive('/select-database') ? "secondary" : "ghost"}
-                className={`justify-start ${isActive('/select-database') ? 'bg-secondary font-medium' : ''}`}
-                onClick={() => navigate('/select-database')}
-              >
-                <Database className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">Database Selection</span>
-              </Button>
-              
-              <Button
-                variant={isActive('/sql-generation') ? "secondary" : "ghost"}
-                className={`justify-start ${isActive('/sql-generation') ? 'bg-secondary font-medium' : ''}`}
-                onClick={() => navigate('/sql-generation')}
+                variant={isActive('/query-generator') ? "secondary" : "ghost"}
+                className={`justify-start ${isActive('/query-generator') ? 'bg-secondary font-medium' : ''}`}
+                onClick={() => navigate('/query-generator')}
               >
                 <Terminal className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">SQL Generation</span>
+                <span className="hidden md:inline">Query Generator</span>
               </Button>
               
+              {/* Home button for future use */}
               <Button
-                variant={isActive('/nosql-generation') ? "secondary" : "ghost"}
-                className={`justify-start ${isActive('/nosql-generation') ? 'bg-secondary font-medium' : ''}`}
-                onClick={() => navigate('/nosql-generation')}
+                variant={isActive('/') ? "secondary" : "ghost"}
+                className={`justify-start ${isActive('/') ? 'bg-secondary font-medium' : ''}`}
+                onClick={() => navigate('/')}
               >
-                <Terminal className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">NoSQL Generation</span>
-              </Button>
-              
-              <Button
-                variant={isActive('/sql-results') ? "secondary" : "ghost"}
-                className={`justify-start ${isActive('/sql-results') ? 'bg-secondary font-medium' : ''}`}
-                onClick={() => navigate('/sql-results')}
-              >
-                <Database className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">SQL Results</span>
-              </Button>
-              
-              <Button
-                variant={isActive('/nosql-results') ? "secondary" : "ghost"}
-                className={`justify-start ${isActive('/nosql-results') ? 'bg-secondary font-medium' : ''}`}
-                onClick={() => navigate('/nosql-results')}
-              >
-                <Database className="h-5 w-5 mr-0 md:mr-2" />
-                <span className="hidden md:inline">NoSQL Results</span>
+                <Home className="h-5 w-5 mr-0 md:mr-2" />
+                <span className="hidden md:inline">Home</span>
               </Button>
             </nav>
           </aside>
         )}
         
         {/* Content area */}
-        <main className="flex-1 p-4 md:p-6 animate-fade-in">
+        <main className="flex-1 animate-fade-in">
           {children}
         </main>
       </div>

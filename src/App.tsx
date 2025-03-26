@@ -8,11 +8,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import SelectDatabase from "./pages/SelectDatabase";
-import SqlGeneration from "./pages/SqlGeneration";
-import NoSqlGeneration from "./pages/NoSqlGeneration";
-import SqlResults from "./pages/SqlResults";
-import NoSqlResults from "./pages/NoSqlResults";
+import QueryGenerator from "./pages/QueryGenerator";
 import NotFound from "./pages/NotFound";
 import AuthGuard from "./components/layout/AuthGuard";
 
@@ -30,42 +26,10 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route 
-              path="/select-database" 
+              path="/query-generator" 
               element={
                 <AuthGuard>
-                  <SelectDatabase />
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/sql-generation" 
-              element={
-                <AuthGuard>
-                  <SqlGeneration />
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/nosql-generation" 
-              element={
-                <AuthGuard>
-                  <NoSqlGeneration />
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/sql-results" 
-              element={
-                <AuthGuard>
-                  <SqlResults />
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/nosql-results" 
-              element={
-                <AuthGuard>
-                  <NoSqlResults />
+                  <QueryGenerator />
                 </AuthGuard>
               } 
             />

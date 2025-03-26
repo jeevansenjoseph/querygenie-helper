@@ -1,0 +1,630 @@
+
+import { useState, useEffect, useRef } from 'react';
+import AppLayout from '@/components/layout/AppLayout';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Clipboard, FileDown, Loader2, Sparkles, MessageCircle, Save, Database } from 'lucide-react';
+import { translateToSql, translateToNoSql, generateMockSqlResults, generateMockNoSqlResults } from '@/lib/database';
+import { toast } from "@/lib/toast";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+type MessageType = {
+  id: string;
+  text: string;
+  sender: 'user' | 'system';
+  timestamp: Date;
+  query?: string;
+  isExecuted?: boolean;
+};
+
+type SessionType = {
+  id: string;
+  name: string;
+  messages: MessageType[];
+  databaseType: 'sql' | 'nosql';
+  selectedDatabase: string;
+  dateCreated: Date;
+};
+
+const QueryGenerator = () => {
+  // Database selection state
+  const [databaseType, setDatabaseType] = useState<'sql' | 'nosql'>('sql');
+  const [selectedDatabase, setSelectedDatabase] = useState('mysql');
+  
+  // Chat and query state
+  const [userInput, setUserInput] = useState('');
+  const [messages, setMessages] = useState<MessageType[]>([
+    {
+      id: '1',
+      text: 'Hello! I can help you generate queries. What would you like to know?',
+      sender: 'system',
+      timestamp: new Date()
+    }
+  ]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Results state
+  const [activeQuery, setActiveQuery] = useState<string | null>(null);
+  const [queryResults, setQueryResults] = useState<any>(null);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+  
+  // Sessions state
+  const [sessions, setSessions] = useState<SessionType[]>([]);
+  const [currentSession, setCurrentSession] = useState<SessionType>({
+    id: '1',
+    name: 'New Session',
+    messages: [...messages],
+    databaseType,
+    selectedDatabase,
+    dateCreated: new Date()
+  });
+  
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Load sessions from localStorage on mount
+  useEffect(() => {
+    const savedSessions = localStorage.getItem('query-sessions');
+    if (savedSessions) {
+      const parsedSessions = JSON.parse(savedSessions);
+      setSessions(parsedSessions);
+      
+      // Set current session to the last one
+      if (parsedSessions.length > 0) {
+        const lastSession = parsedSessions[parsedSessions.length - 1];
+        setCurrentSession(lastSession);
+        setMessages(lastSession.messages);
+        setDatabaseType(lastSession.databaseType);
+        setSelectedDatabase(lastSession.selectedDatabase);
+      }
+    }
+  }, []);
+
+  // Scroll to bottom of messages when new message is added
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // Save sessions to localStorage when they change
+  useEffect(() => {
+    if (sessions.length > 0) {
+      localStorage.setItem('query-sessions', JSON.stringify(sessions));
+    }
+  }, [sessions]);
+
+  const handleSendMessage = () => {
+    if (!userInput.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+    
+    // Add user message
+    const userMessage: MessageType = {
+      id: Date.now().toString(),
+      text: userInput,
+      sender: 'user',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    setUserInput('');
+    setIsGenerating(true);
+    
+    // Simulate query generation
+    setTimeout(() => {
+      let generatedQuery = '';
+      
+      if (databaseType === 'sql') {
+        generatedQuery = translateToSql(userMessage.text, selectedDatabase);
+      } else {
+        generatedQuery = translateToNoSql(userMessage.text, selectedDatabase);
+      }
+      
+      // Add system response with generated query
+      const systemResponse: MessageType = {
+        id: (Date.now() + 1).toString(),
+        text: `Here's your ${databaseType.toUpperCase()} query:`,
+        sender: 'system',
+        timestamp: new Date(),
+        query: generatedQuery,
+        isExecuted: false
+      };
+      
+      setMessages(prev => [...prev, systemResponse]);
+      setIsGenerating(false);
+      
+      // Update current session
+      const updatedSession = {
+        ...currentSession,
+        messages: [...messages, userMessage, systemResponse],
+        databaseType,
+        selectedDatabase
+      };
+      setCurrentSession(updatedSession);
+      
+      // Update session in sessions array
+      setSessions(prev => {
+        const updatedSessions = prev.map(session => 
+          session.id === currentSession.id ? updatedSession : session
+        );
+        return updatedSessions;
+      });
+    }, 1200);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const handleExecuteQuery = (query: string) => {
+    setActiveQuery(query);
+    setIsLoadingResults(true);
+    
+    // Simulate query execution
+    setTimeout(() => {
+      if (databaseType === 'sql') {
+        const results = generateMockSqlResults(query);
+        setQueryResults(results);
+      } else {
+        const results = generateMockNoSqlResults(query);
+        setQueryResults(results);
+      }
+      
+      setIsLoadingResults(false);
+      
+      // Mark the query as executed
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.query === query ? { ...msg, isExecuted: true } : msg
+        )
+      );
+      
+      toast.success('Query executed successfully');
+    }, 1000);
+  };
+
+  const handleDatabaseTypeChange = (value: 'sql' | 'nosql') => {
+    setDatabaseType(value);
+    // Set default database based on type
+    if (value === 'sql') {
+      setSelectedDatabase('mysql');
+    } else {
+      setSelectedDatabase('mongodb');
+    }
+    
+    // Update current session
+    const updatedSession = {
+      ...currentSession,
+      databaseType: value,
+      selectedDatabase: value === 'sql' ? 'mysql' : 'mongodb'
+    };
+    setCurrentSession(updatedSession);
+    
+    // Update session in sessions array
+    setSessions(prev => {
+      const updatedSessions = prev.map(session => 
+        session.id === currentSession.id ? updatedSession : session
+      );
+      return updatedSessions;
+    });
+  };
+
+  const handleDatabaseChange = (value: string) => {
+    setSelectedDatabase(value);
+    
+    // Update current session
+    const updatedSession = {
+      ...currentSession,
+      selectedDatabase: value
+    };
+    setCurrentSession(updatedSession);
+    
+    // Update session in sessions array
+    setSessions(prev => {
+      const updatedSessions = prev.map(session => 
+        session.id === currentSession.id ? updatedSession : session
+      );
+      return updatedSessions;
+    });
+  };
+
+  const handleCreateNewSession = () => {
+    const newSession: SessionType = {
+      id: Date.now().toString(),
+      name: `Session ${sessions.length + 1}`,
+      messages: [{
+        id: '1',
+        text: 'Hello! I can help you generate queries. What would you like to know?',
+        sender: 'system',
+        timestamp: new Date()
+      }],
+      databaseType,
+      selectedDatabase,
+      dateCreated: new Date()
+    };
+    
+    setSessions(prev => [...prev, newSession]);
+    setCurrentSession(newSession);
+    setMessages(newSession.messages);
+    setQueryResults(null);
+    setActiveQuery(null);
+    
+    toast.success('New session created');
+  };
+
+  const handleSaveSession = () => {
+    // Update current session in sessions array
+    const updatedSession = {
+      ...currentSession,
+      messages,
+      databaseType,
+      selectedDatabase
+    };
+    
+    setSessions(prev => {
+      const updatedSessions = prev.map(session => 
+        session.id === currentSession.id ? updatedSession : session
+      );
+      return updatedSessions;
+    });
+    
+    toast.success('Session saved');
+  };
+
+  const handleLoadSession = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      setCurrentSession(session);
+      setMessages(session.messages);
+      setDatabaseType(session.databaseType);
+      setSelectedDatabase(session.selectedDatabase);
+      setQueryResults(null);
+      setActiveQuery(null);
+      
+      toast.success(`Loaded session: ${session.name}`);
+    }
+  };
+
+  const handleExportResults = () => {
+    if (!queryResults) return;
+    
+    if (databaseType === 'sql') {
+      // Export as CSV for SQL results
+      const headers = queryResults.columns.join(',');
+      const rows = queryResults.rows.map((row: any) => 
+        queryResults.columns.map((col: string) => `"${row[col]}"`).join(',')
+      ).join('\n');
+      
+      const csv = `${headers}\n${rows}`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'sql_results.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      // Export as JSON for NoSQL results
+      const json = JSON.stringify(queryResults, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.setAttribute('hidden', '');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'nosql_results.json');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+    
+    toast.success(`Results exported as ${databaseType === 'sql' ? 'CSV' : 'JSON'}`);
+  };
+
+  const handleCopyQuery = (query: string) => {
+    navigator.clipboard.writeText(query);
+    toast.success('Query copied to clipboard');
+  };
+
+  return (
+    <AppLayout>
+      <div className="container-lg py-4 animate-fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 h-[calc(100vh-120px)]">
+          {/* Left Column - Query Generation */}
+          <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center space-x-2">
+                <Label>Database Type:</Label>
+                <Select 
+                  value={databaseType} 
+                  onValueChange={(value) => handleDatabaseTypeChange(value as 'sql' | 'nosql')}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Select database type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sql">SQL</SelectItem>
+                    <SelectItem value="nosql">NoSQL</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Label className="ml-4">Database:</Label>
+                {databaseType === 'sql' ? (
+                  <Select value={selectedDatabase} onValueChange={handleDatabaseChange}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Select database" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mysql">MySQL</SelectItem>
+                      <SelectItem value="postgresql">PostgreSQL</SelectItem>
+                      <SelectItem value="sqlserver">SQL Server</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select value={selectedDatabase} onValueChange={handleDatabaseChange}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Select database" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="mongodb">MongoDB</SelectItem>
+                      <SelectItem value="dynamodb">DynamoDB</SelectItem>
+                      <SelectItem value="firebase">Firebase</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Database className="h-4 w-4 mr-2" />
+                      Sessions
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[200px]">
+                    {sessions.map(session => (
+                      <DropdownMenuItem 
+                        key={session.id}
+                        onClick={() => handleLoadSession(session.id)}
+                      >
+                        {session.name} - {new Date(session.dateCreated).toLocaleDateString()}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSaveSession}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleCreateNewSession}
+                >
+                  + New
+                </Button>
+              </div>
+            </div>
+            
+            <Card className="flex-1 flex flex-col overflow-hidden">
+              <CardContent className="flex-1 p-4 overflow-hidden flex flex-col">
+                <div className="flex-1 overflow-y-auto pr-1 mb-4 space-y-4">
+                  {messages.map((message) => (
+                    <div 
+                      key={message.id} 
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div 
+                        className={`max-w-[80%] rounded-lg p-3 ${
+                          message.sender === 'user' 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words">{message.text}</p>
+                        {message.query && (
+                          <div className="mt-2">
+                            <div className="bg-background bg-opacity-10 rounded p-2 relative font-mono text-sm">
+                              <pre className="overflow-x-auto">{message.query}</pre>
+                              <div className="flex absolute top-2 right-2 space-x-1">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className="h-6 w-6 p-0 bg-black bg-opacity-20 hover:bg-opacity-30"
+                                  onClick={() => handleCopyQuery(message.query!)}
+                                >
+                                  <Clipboard className="h-3 w-3" />
+                                </Button>
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  className={`h-6 w-6 p-0 ${message.isExecuted ? 'bg-green-500 bg-opacity-20 hover:bg-opacity-30' : 'bg-black bg-opacity-20 hover:bg-opacity-30'}`}
+                                  onClick={() => handleExecuteQuery(message.query!)}
+                                >
+                                  <Sparkles className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        <div className="text-xs mt-1 opacity-70">
+                          {new Date(message.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+                
+                <div className="relative">
+                  <Textarea
+                    placeholder="Type your query in natural language..."
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className="pr-12 resize-none"
+                    rows={3}
+                  />
+                  <Button 
+                    className="absolute bottom-2 right-2"
+                    size="sm"
+                    onClick={handleSendMessage}
+                    disabled={isGenerating || !userInput.trim()}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MessageCircle className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Right Column - Query Results */}
+          <div className="flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                Query Results
+              </h2>
+              
+              {queryResults && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleExportResults}
+                  className="gap-2"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Export {databaseType === 'sql' ? 'CSV' : 'JSON'}
+                </Button>
+              )}
+            </div>
+            
+            <Card className="flex-1 overflow-hidden">
+              <CardContent className="p-4 h-full overflow-auto">
+                {isLoadingResults ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="animate-pulse space-y-4 w-full">
+                      <div className="h-10 bg-muted rounded-md w-full"></div>
+                      <div className="h-32 bg-muted rounded-md w-full"></div>
+                    </div>
+                  </div>
+                ) : activeQuery ? (
+                  <div className="space-y-4">
+                    <div className="text-sm font-medium flex items-center">
+                      Executed Query:
+                      <pre className="ml-2 text-xs text-muted-foreground overflow-auto p-2 bg-muted/60 rounded">
+                        <code>{activeQuery}</code>
+                      </pre>
+                    </div>
+                    
+                    {queryResults ? (
+                      databaseType === 'sql' ? (
+                        <div className="overflow-x-auto">
+                          <div className="inline-block min-w-full align-middle">
+                            <div className="overflow-hidden border rounded-lg">
+                              <table className="min-w-full divide-y divide-border">
+                                <thead className="bg-muted/50">
+                                  <tr>
+                                    {queryResults.columns.map((column: string, index: number) => (
+                                      <th
+                                        key={index}
+                                        scope="col"
+                                        className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                                      >
+                                        {column}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-border">
+                                  {queryResults.rows.map((row: any, rowIndex: number) => (
+                                    <tr key={rowIndex} className="hover:bg-muted/30">
+                                      {queryResults.columns.map((column: string, colIndex: number) => (
+                                        <td
+                                          key={colIndex}
+                                          className="px-6 py-4 whitespace-nowrap text-sm"
+                                        >
+                                          {row[column]?.toString()}
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {queryResults.rows.length} row{queryResults.rows.length !== 1 ? 's' : ''} returned
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {queryResults.map((item: any, index: number) => (
+                            <div 
+                              key={index} 
+                              className="border rounded-lg p-4 hover:bg-muted/30 transition-colors"
+                            >
+                              <pre className="text-sm whitespace-pre-wrap overflow-auto">
+                                {JSON.stringify(item, null, 2)}
+                              </pre>
+                            </div>
+                          ))}
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {queryResults.length} document{queryResults.length !== 1 ? 's' : ''} returned
+                          </p>
+                        </div>
+                      )
+                    ) : (
+                      <div className="text-center py-10">
+                        <p className="text-muted-foreground">No results available</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center text-muted-foreground">
+                      <p>Generate a query and execute it to see results here</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+};
+
+export default QueryGenerator;
