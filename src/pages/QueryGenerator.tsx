@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Clipboard, FileDown, Loader2, Sparkles, MessageCircle, Save, Database } from 'lucide-react';
+import { Clipboard, FileDown, Loader2, Sparkles, MessageCircle, Save } from 'lucide-react';
 import { translateToSql, translateToNoSql, generateMockSqlResults, generateMockNoSqlResults } from '@/lib/database';
 import { toast } from "@/lib/toast";
 import { 
@@ -15,12 +15,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 type MessageType = {
   id: string;
@@ -36,14 +30,12 @@ type SessionType = {
   name: string;
   messages: MessageType[];
   databaseType: 'sql' | 'nosql';
-  selectedDatabase: string;
   dateCreated: Date;
 };
 
 const QueryGenerator = () => {
-  // Database selection state
+  // Database type state
   const [databaseType, setDatabaseType] = useState<'sql' | 'nosql'>('sql');
-  const [selectedDatabase, setSelectedDatabase] = useState('mysql');
   
   // Chat and query state
   const [userInput, setUserInput] = useState('');
@@ -69,7 +61,6 @@ const QueryGenerator = () => {
     name: 'New Session',
     messages: [...messages],
     databaseType,
-    selectedDatabase,
     dateCreated: new Date()
   });
   
@@ -82,13 +73,19 @@ const QueryGenerator = () => {
       const parsedSessions = JSON.parse(savedSessions);
       setSessions(parsedSessions);
       
-      // Set current session to the last one
-      if (parsedSessions.length > 0) {
+      // Check for current session
+      const currentSessionData = localStorage.getItem('current-session');
+      if (currentSessionData) {
+        const parsedCurrentSession = JSON.parse(currentSessionData);
+        setCurrentSession(parsedCurrentSession);
+        setMessages(parsedCurrentSession.messages);
+        setDatabaseType(parsedCurrentSession.databaseType);
+      } else if (parsedSessions.length > 0) {
+        // Set current session to the last one if no current session
         const lastSession = parsedSessions[parsedSessions.length - 1];
         setCurrentSession(lastSession);
         setMessages(lastSession.messages);
         setDatabaseType(lastSession.databaseType);
-        setSelectedDatabase(lastSession.selectedDatabase);
       }
     }
   }, []);
@@ -130,9 +127,9 @@ const QueryGenerator = () => {
       let generatedQuery = '';
       
       if (databaseType === 'sql') {
-        generatedQuery = translateToSql(userMessage.text, selectedDatabase);
+        generatedQuery = translateToSql(userMessage.text);
       } else {
-        generatedQuery = translateToNoSql(userMessage.text, selectedDatabase);
+        generatedQuery = translateToNoSql(userMessage.text);
       }
       
       // Add system response with generated query
@@ -152,10 +149,10 @@ const QueryGenerator = () => {
       const updatedSession = {
         ...currentSession,
         messages: [...messages, userMessage, systemResponse],
-        databaseType,
-        selectedDatabase
+        databaseType
       };
       setCurrentSession(updatedSession);
+      localStorage.setItem('current-session', JSON.stringify(updatedSession));
       
       // Update session in sessions array
       setSessions(prev => {
@@ -203,20 +200,14 @@ const QueryGenerator = () => {
 
   const handleDatabaseTypeChange = (value: 'sql' | 'nosql') => {
     setDatabaseType(value);
-    // Set default database based on type
-    if (value === 'sql') {
-      setSelectedDatabase('mysql');
-    } else {
-      setSelectedDatabase('mongodb');
-    }
     
     // Update current session
     const updatedSession = {
       ...currentSession,
-      databaseType: value,
-      selectedDatabase: value === 'sql' ? 'mysql' : 'mongodb'
+      databaseType: value
     };
     setCurrentSession(updatedSession);
+    localStorage.setItem('current-session', JSON.stringify(updatedSession));
     
     // Update session in sessions array
     setSessions(prev => {
@@ -225,49 +216,6 @@ const QueryGenerator = () => {
       );
       return updatedSessions;
     });
-  };
-
-  const handleDatabaseChange = (value: string) => {
-    setSelectedDatabase(value);
-    
-    // Update current session
-    const updatedSession = {
-      ...currentSession,
-      selectedDatabase: value
-    };
-    setCurrentSession(updatedSession);
-    
-    // Update session in sessions array
-    setSessions(prev => {
-      const updatedSessions = prev.map(session => 
-        session.id === currentSession.id ? updatedSession : session
-      );
-      return updatedSessions;
-    });
-  };
-
-  const handleCreateNewSession = () => {
-    const newSession: SessionType = {
-      id: Date.now().toString(),
-      name: `Session ${sessions.length + 1}`,
-      messages: [{
-        id: '1',
-        text: 'Hello! I can help you generate queries. What would you like to know?',
-        sender: 'system',
-        timestamp: new Date()
-      }],
-      databaseType,
-      selectedDatabase,
-      dateCreated: new Date()
-    };
-    
-    setSessions(prev => [...prev, newSession]);
-    setCurrentSession(newSession);
-    setMessages(newSession.messages);
-    setQueryResults(null);
-    setActiveQuery(null);
-    
-    toast.success('New session created');
   };
 
   const handleSaveSession = () => {
@@ -275,8 +223,7 @@ const QueryGenerator = () => {
     const updatedSession = {
       ...currentSession,
       messages,
-      databaseType,
-      selectedDatabase
+      databaseType
     };
     
     setSessions(prev => {
@@ -286,21 +233,8 @@ const QueryGenerator = () => {
       return updatedSessions;
     });
     
+    localStorage.setItem('current-session', JSON.stringify(updatedSession));
     toast.success('Session saved');
-  };
-
-  const handleLoadSession = (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      setCurrentSession(session);
-      setMessages(session.messages);
-      setDatabaseType(session.databaseType);
-      setSelectedDatabase(session.selectedDatabase);
-      setQueryResults(null);
-      setActiveQuery(null);
-      
-      toast.success(`Loaded session: ${session.name}`);
-    }
   };
 
   const handleExportResults = () => {
@@ -368,53 +302,9 @@ const QueryGenerator = () => {
                     <SelectItem value="nosql">NoSQL</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <Label className="ml-4">Database:</Label>
-                {databaseType === 'sql' ? (
-                  <Select value={selectedDatabase} onValueChange={handleDatabaseChange}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Select database" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mysql">MySQL</SelectItem>
-                      <SelectItem value="postgresql">PostgreSQL</SelectItem>
-                      <SelectItem value="sqlserver">SQL Server</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Select value={selectedDatabase} onValueChange={handleDatabaseChange}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Select database" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mongodb">MongoDB</SelectItem>
-                      <SelectItem value="dynamodb">DynamoDB</SelectItem>
-                      <SelectItem value="firebase">Firebase</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
               </div>
               
               <div className="flex items-center space-x-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Database className="h-4 w-4 mr-2" />
-                      Sessions
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[200px]">
-                    {sessions.map(session => (
-                      <DropdownMenuItem 
-                        key={session.id}
-                        onClick={() => handleLoadSession(session.id)}
-                      >
-                        {session.name} - {new Date(session.dateCreated).toLocaleDateString()}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -422,14 +312,6 @@ const QueryGenerator = () => {
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleCreateNewSession}
-                >
-                  + New
                 </Button>
               </div>
             </div>
@@ -451,30 +333,32 @@ const QueryGenerator = () => {
                       >
                         <p className="whitespace-pre-wrap break-words">{message.text}</p>
                         {message.query && (
-                          <div className="mt-2 relative">
+                          <div className="mt-2 mb-3 relative">
                             <div className="bg-background bg-opacity-10 rounded p-2 font-mono text-sm">
                               <pre className="overflow-x-auto pr-2">{message.query}</pre>
                             </div>
-                            <div className="flex absolute -top-3 right-0 space-x-1">
-                              <Button 
-                                size="sm"
-                                variant="secondary"
-                                className="h-8 rounded-full"
-                                onClick={() => handleCopyQuery(message.query!)}
-                              >
-                                <Clipboard className="h-4 w-4 mr-1" />
-                                Copy
-                              </Button>
-                              <Button 
-                                size="sm"
-                                variant={message.isExecuted ? "ghost" : "secondary"}
-                                className={`h-8 rounded-full ${message.isExecuted ? 'bg-green-100 text-green-700' : ''}`}
-                                onClick={() => handleExecuteQuery(message.query!)}
-                              >
-                                <Sparkles className="h-4 w-4 mr-1" />
-                                {message.isExecuted ? 'Executed' : 'Execute'}
-                              </Button>
-                            </div>
+                          </div>
+                        )}
+                        {message.query && (
+                          <div className="flex space-x-2 mt-2">
+                            <Button 
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 rounded-full"
+                              onClick={() => handleCopyQuery(message.query!)}
+                            >
+                              <Clipboard className="h-4 w-4 mr-1" />
+                              Copy
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={message.isExecuted ? "ghost" : "secondary"}
+                              className={`h-8 rounded-full ${message.isExecuted ? 'bg-green-100 text-green-700' : ''}`}
+                              onClick={() => handleExecuteQuery(message.query!)}
+                            >
+                              <Sparkles className="h-4 w-4 mr-1" />
+                              {message.isExecuted ? 'Executed' : 'Execute'}
+                            </Button>
                           </div>
                         )}
                         <div className="text-xs mt-1 opacity-70">
