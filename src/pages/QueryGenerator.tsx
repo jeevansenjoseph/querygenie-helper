@@ -23,10 +23,13 @@ const QueryGenerator = () => {
     handleExportResults
   } = useQueryExecution(databaseType, messages, updateMessagesInSession);
 
-  // Auto-save effect
+  // Auto-save effect - only run when messages change
   useEffect(() => {
-    // updateMessagesInSession already handles saving to localStorage
-  }, [messages, databaseType]);
+    if (Array.isArray(messages)) {
+      // updateMessagesInSession already handles saving to localStorage
+      updateMessagesInSession(messages);
+    }
+  }, [messages, databaseType, updateMessagesInSession]);
 
   return (
     <AppLayout>
@@ -34,7 +37,7 @@ const QueryGenerator = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-120px)]">
           {/* Left Column - Query Generation */}
           <ChatInterface
-            messages={messages}
+            messages={Array.isArray(messages) ? messages : []}
             databaseType={databaseType}
             onDatabaseTypeChange={handleDatabaseTypeChange}
             updateMessages={updateMessagesInSession}

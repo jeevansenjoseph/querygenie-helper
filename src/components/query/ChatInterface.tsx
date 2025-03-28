@@ -38,7 +38,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       timestamp: new Date()
     };
     
-    const updatedMessages = [...messages, userMessage];
+    // Ensure messages is an array
+    const safeMessages = Array.isArray(messages) ? messages : [];
+    const updatedMessages = [...safeMessages, userMessage];
+    
     updateMessages(updatedMessages);
     setIsGenerating(true);
     
@@ -75,7 +78,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <Card className="flex-1 flex flex-col overflow-hidden">
         <CardContent className="flex-1 p-4 overflow-hidden flex flex-col">
           <MessageList 
-            messages={messages} 
+            messages={Array.isArray(messages) ? messages : []} 
             onExecuteQuery={onExecuteQuery} 
           />
           

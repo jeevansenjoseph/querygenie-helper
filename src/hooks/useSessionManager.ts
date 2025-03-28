@@ -29,32 +29,57 @@ export const useSessionManager = () => {
 
   // Load sessions from localStorage on mount
   useEffect(() => {
-    const savedSessions = localStorage.getItem('query-sessions');
-    if (savedSessions) {
-      const parsedSessions = JSON.parse(savedSessions);
-      setSessions(parsedSessions);
-      
-      // Check for current session
-      const currentSessionData = localStorage.getItem('current-session');
-      if (currentSessionData) {
-        const parsedCurrentSession = JSON.parse(currentSessionData);
-        setCurrentSession(parsedCurrentSession);
-        setMessages(parsedCurrentSession.messages);
-        setDatabaseType(parsedCurrentSession.databaseType);
-      } else if (parsedSessions.length > 0) {
-        // Set current session to the last one if no current session
-        const lastSession = parsedSessions[parsedSessions.length - 1];
-        setCurrentSession(lastSession);
-        setMessages(lastSession.messages);
-        setDatabaseType(lastSession.databaseType);
+    try {
+      const savedSessions = localStorage.getItem('query-sessions');
+      if (savedSessions) {
+        const parsedSessions = JSON.parse(savedSessions);
+        if (Array.isArray(parsedSessions)) {
+          setSessions(parsedSessions);
+          
+          // Check for current session
+          const currentSessionData = localStorage.getItem('current-session');
+          if (currentSessionData) {
+            const parsedCurrentSession = JSON.parse(currentSessionData);
+            setCurrentSession(parsedCurrentSession);
+            
+            // Ensure messages is always an array
+            const sessionMessages = Array.isArray(parsedCurrentSession.messages) 
+              ? parsedCurrentSession.messages 
+              : [];
+            
+            setMessages(sessionMessages);
+            setDatabaseType(parsedCurrentSession.databaseType || 'sql');
+          } else if (parsedSessions.length > 0) {
+            // Set current session to the last one if no current session
+            const lastSession = parsedSessions[parsedSessions.length - 1];
+            setCurrentSession(lastSession);
+            
+            // Ensure messages is always an array
+            const sessionMessages = Array.isArray(lastSession.messages) 
+              ? lastSession.messages 
+              : [];
+            
+            setMessages(sessionMessages);
+            setDatabaseType(lastSession.databaseType || 'sql');
+          }
+        }
       }
+    } catch (error) {
+      console.error("Error loading sessions:", error);
+      // Fallback to empty sessions if there's an error
+      localStorage.removeItem('query-sessions');
+      localStorage.removeItem('current-session');
     }
   }, []);
 
   // Save sessions to localStorage when they change
   useEffect(() => {
     if (sessions.length > 0) {
-      localStorage.setItem('query-sessions', JSON.stringify(sessions));
+      try {
+        localStorage.setItem('query-sessions', JSON.stringify(sessions));
+      } catch (error) {
+        console.error("Error saving sessions:", error);
+      }
     }
   }, [sessions]);
 
@@ -67,37 +92,28 @@ export const useSessionManager = () => {
       databaseType: value
     };
     setCurrentSession(updatedSession);
-    localStorage.setItem('current-session', JSON.stringify(updatedSession));
     
-    // Update session in sessions array
-    setSessions(prev => {
-      const updatedSessions = prev.map(session => 
-        session.id === currentSession.id ? updatedSession : session
-      );
-      return updatedSessions;
-    });
-  };
-
-  const saveSession = () => {
-    // Update current session in sessions array
-    const updatedSession = {
-      ...currentSession,
-      messages,
-      databaseType
-    };
-    
-    setSessions(prev => {
-      const updatedSessions = prev.map(session => 
-        session.id === currentSession.id ? updatedSession : session
-      );
-      return updatedSessions;
-    });
-    
-    localStorage.setItem('current-session', JSON.stringify(updatedSession));
-    toast.success('Session saved');
+    try {
+      localStorage.setItem('current-session', JSON.stringify(updatedSession));
+      
+      // Update session in sessions array
+      setSessions(prev => {
+        const updatedSessions = prev.map(session => 
+          session.id === currentSession.id ? updatedSession : session
+        );
+        return updatedSessions;
+      });
+    } catch (error) {
+      console.error("Error updating database type:", error);
+    }
   };
 
   const updateMessagesInSession = (newMessages: MessageType[]) => {
+    if (!Array.isArray(newMessages)) {
+      console.error("updateMessagesInSession received non-array:", newMessages);
+      newMessages = [];
+    }
+    
     setMessages(newMessages);
     
     // Update current session
@@ -106,15 +122,25 @@ export const useSessionManager = () => {
       messages: newMessages
     };
     setCurrentSession(updatedSession);
-    localStorage.setItem('current-session', JSON.stringify(updatedSession));
     
-    // Update session in sessions array
-    setSessions(prev => {
-      const updatedSessions = prev.map(session => 
-        session.id === currentSession.id ? updatedSession : session
-      );
-      return updatedSessions;
-    });
+    try {
+      localStorage.setItem('current-session', JSON.stringify(updatedSession));
+      
+      // Update session in sessions array
+      setSessions(prev => {
+        if (!Array.isArray(prev)) {
+          console.error("Sessions state is not an array:", prev);
+          return [updatedSession];
+        }
+        
+        const updatedSessions = prev.map(session => 
+          session.id === currentSession.id ? updatedSession : session
+        );
+        return updatedSessions;
+      });
+    } catch (error) {
+      console.error("Error updating messages in session:", error);
+    }
   };
 
   return {
@@ -125,7 +151,6 @@ export const useSessionManager = () => {
     sessions,
     currentSession,
     handleDatabaseTypeChange,
-    saveSession,
     updateMessagesInSession
   };
 };

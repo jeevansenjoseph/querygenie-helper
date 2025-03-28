@@ -25,9 +25,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onExecuteQuery }) =
     toast.success('Query copied to clipboard');
   };
 
+  // Safety check to ensure messages is an array
+  const safeMessages = Array.isArray(messages) ? messages : [];
+
   return (
     <div className="flex-1 overflow-y-auto pr-1 mb-4 space-y-4">
-      {messages.map((message) => (
+      {safeMessages.map((message) => (
         <div 
           key={message.id} 
           className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
