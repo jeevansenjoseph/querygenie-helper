@@ -17,149 +17,251 @@ export const useSessionManager = () => {
   // Database type state
   const [databaseType, setDatabaseType] = useState<'sql' | 'nosql'>('sql');
   
-  // Sessions state
-  const [sessions, setSessions] = useState<SessionType[]>([]);
-  const [currentSession, setCurrentSession] = useState<SessionType>({
-    id: '1',
-    name: 'New Session',
+  // Sessions state - now we'll store these as chat history
+  const [chatHistory, setChatHistory] = useState<SessionType[]>([]);
+  const [currentChat, setCurrentChat] = useState<SessionType>({
+    id: Date.now().toString(),
+    name: `Chat ${new Date().toLocaleString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric'
+    })}`,
     messages: [...messages],
     databaseType,
     dateCreated: new Date()
   });
 
-  // Load sessions from localStorage on mount
+  // Load chat history from localStorage on mount
   useEffect(() => {
     try {
-      const savedSessions = localStorage.getItem('query-sessions');
-      if (savedSessions) {
-        const parsedSessions = JSON.parse(savedSessions);
-        if (Array.isArray(parsedSessions)) {
-          setSessions(parsedSessions);
+      const savedHistory = localStorage.getItem('query-history');
+      if (savedHistory) {
+        const parsedHistory = JSON.parse(savedHistory);
+        if (Array.isArray(parsedHistory)) {
+          setChatHistory(parsedHistory);
           
-          // Check for current session
-          const currentSessionData = localStorage.getItem('current-session');
-          if (currentSessionData) {
+          // Check for current chat
+          const currentChatData = localStorage.getItem('current-chat');
+          if (currentChatData) {
             try {
-              const parsedCurrentSession = JSON.parse(currentSessionData);
+              const parsedCurrentChat = JSON.parse(currentChatData);
               
-              // Ensure currentSession has valid structure
-              if (parsedCurrentSession && typeof parsedCurrentSession === 'object') {
-                setCurrentSession(parsedCurrentSession);
+              // Ensure currentChat has valid structure
+              if (parsedCurrentChat && typeof parsedCurrentChat === 'object') {
+                setCurrentChat(parsedCurrentChat);
                 
                 // Ensure messages is always an array
-                const sessionMessages = Array.isArray(parsedCurrentSession.messages) 
-                  ? parsedCurrentSession.messages 
+                const chatMessages = Array.isArray(parsedCurrentChat.messages) 
+                  ? parsedCurrentChat.messages 
                   : [];
                 
-                setMessages(sessionMessages);
-                setDatabaseType(parsedCurrentSession.databaseType || 'sql');
+                setMessages(chatMessages);
+                setDatabaseType(parsedCurrentChat.databaseType || 'sql');
               }
             } catch (error) {
-              console.error("Error parsing current session:", error);
-              // Fall back to default session
-              localStorage.removeItem('current-session');
+              console.error("Error parsing current chat:", error);
+              localStorage.removeItem('current-chat');
             }
-          } else if (parsedSessions.length > 0) {
-            // Set current session to the last one if no current session
-            const lastSession = parsedSessions[parsedSessions.length - 1];
-            if (lastSession && typeof lastSession === 'object') {
-              setCurrentSession(lastSession);
+          } else if (parsedHistory.length > 0) {
+            // Set current chat to the last one if no current chat
+            const lastChat = parsedHistory[parsedHistory.length - 1];
+            if (lastChat && typeof lastChat === 'object') {
+              setCurrentChat(lastChat);
               
               // Ensure messages is always an array
-              const sessionMessages = Array.isArray(lastSession.messages) 
-                ? lastSession.messages 
+              const chatMessages = Array.isArray(lastChat.messages) 
+                ? lastChat.messages 
                 : [];
               
-              setMessages(sessionMessages);
-              setDatabaseType(lastSession.databaseType || 'sql');
+              setMessages(chatMessages);
+              setDatabaseType(lastChat.databaseType || 'sql');
             }
           }
         }
       }
     } catch (error) {
-      console.error("Error loading sessions:", error);
-      // Fallback to empty sessions if there's an error
-      localStorage.removeItem('query-sessions');
-      localStorage.removeItem('current-session');
+      console.error("Error loading chat history:", error);
+      localStorage.removeItem('query-history');
+      localStorage.removeItem('current-chat');
     }
   }, []);
 
-  // Save sessions to localStorage when they change
+  // Save chat history to localStorage when it changes
   useEffect(() => {
-    if (Array.isArray(sessions) && sessions.length > 0) {
+    if (Array.isArray(chatHistory) && chatHistory.length > 0) {
       try {
-        localStorage.setItem('query-sessions', JSON.stringify(sessions));
+        localStorage.setItem('query-history', JSON.stringify(chatHistory));
       } catch (error) {
-        console.error("Error saving sessions:", error);
+        console.error("Error saving chat history:", error);
       }
     }
-  }, [sessions]);
+  }, [chatHistory]);
+
+  // Auto save current chat when messages change
+  useEffect(() => {
+    if (Array.isArray(messages) && messages.length > 0) {
+      const updatedChat = {
+        ...currentChat,
+        messages: [...messages],
+        lastUpdated: new Date()
+      };
+      
+      setCurrentChat(updatedChat);
+      
+      try {
+        localStorage.setItem('current-chat', JSON.stringify(updatedChat));
+        
+        // Update chat in history
+        setChatHistory(prev => {
+          const updatedHistory = Array.isArray(prev) ? [...prev] : [];
+          const chatIndex = updatedHistory.findIndex(chat => chat.id === currentChat.id);
+          
+          if (chatIndex >= 0) {
+            updatedHistory[chatIndex] = updatedChat;
+          } else {
+            updatedHistory.push(updatedChat);
+          }
+          
+          return updatedHistory;
+        });
+      } catch (error) {
+        console.error("Error auto-saving chat:", error);
+      }
+    }
+  }, [messages]);
 
   const handleDatabaseTypeChange = (value: 'sql' | 'nosql') => {
     setDatabaseType(value);
     
-    // Update current session
-    const updatedSession = {
-      ...currentSession,
+    // Update current chat
+    const updatedChat = {
+      ...currentChat,
       databaseType: value
     };
-    setCurrentSession(updatedSession);
+    setCurrentChat(updatedChat);
     
     try {
-      localStorage.setItem('current-session', JSON.stringify(updatedSession));
+      localStorage.setItem('current-chat', JSON.stringify(updatedChat));
       
-      // Update session in sessions array
-      if (Array.isArray(sessions)) {
-        setSessions(prev => {
-          if (!Array.isArray(prev)) {
-            return [updatedSession];
-          }
-          
-          const updatedSessions = prev.map(session => 
-            session.id === currentSession.id ? updatedSession : session
-          );
-          return updatedSessions;
-        });
-      }
+      // Update chat in history
+      setChatHistory(prev => {
+        if (!Array.isArray(prev)) {
+          return [updatedChat];
+        }
+        
+        const chatIndex = prev.findIndex(chat => chat.id === currentChat.id);
+        const updatedHistory = [...prev];
+        
+        if (chatIndex >= 0) {
+          updatedHistory[chatIndex] = updatedChat;
+        } else {
+          updatedHistory.push(updatedChat);
+        }
+        
+        return updatedHistory;
+      });
     } catch (error) {
       console.error("Error updating database type:", error);
     }
   };
 
-  const updateMessagesInSession = (newMessages: MessageType[]) => {
+  const updateMessagesInChat = (newMessages: MessageType[]) => {
     if (!Array.isArray(newMessages)) {
-      console.error("updateMessagesInSession received non-array:", newMessages);
+      console.error("updateMessagesInChat received non-array:", newMessages);
       newMessages = [];
     }
     
     setMessages(newMessages);
     
-    // Update current session
-    const updatedSession = {
-      ...currentSession,
-      messages: newMessages
+    // Update current chat
+    const updatedChat = {
+      ...currentChat,
+      messages: newMessages,
+      lastUpdated: new Date()
     };
-    setCurrentSession(updatedSession);
+    setCurrentChat(updatedChat);
     
     try {
-      localStorage.setItem('current-session', JSON.stringify(updatedSession));
+      localStorage.setItem('current-chat', JSON.stringify(updatedChat));
       
-      // Update session in sessions array
-      if (Array.isArray(sessions)) {
-        setSessions(prev => {
-          if (!Array.isArray(prev)) {
-            console.error("Sessions state is not an array:", prev);
-            return [updatedSession];
-          }
-          
-          const updatedSessions = prev.map(session => 
-            session.id === currentSession.id ? updatedSession : session
-          );
-          return updatedSessions;
-        });
-      }
+      // Update chat in history
+      setChatHistory(prev => {
+        if (!Array.isArray(prev)) {
+          console.error("Chat history state is not an array:", prev);
+          return [updatedChat];
+        }
+        
+        const chatIndex = prev.findIndex(chat => chat.id === currentChat.id);
+        const updatedHistory = [...prev];
+        
+        if (chatIndex >= 0) {
+          updatedHistory[chatIndex] = updatedChat;
+        } else {
+          updatedHistory.push(updatedChat);
+        }
+        
+        return updatedHistory;
+      });
     } catch (error) {
-      console.error("Error updating messages in session:", error);
+      console.error("Error updating messages in chat:", error);
+    }
+  };
+
+  const createNewChat = () => {
+    const newChat = {
+      id: Date.now().toString(),
+      name: `Chat ${new Date().toLocaleString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+      })}`,
+      messages: [{
+        id: '1',
+        text: 'Hello! I can help you generate queries. What would you like to know?',
+        sender: 'system',
+        timestamp: new Date()
+      }],
+      databaseType: 'sql',
+      dateCreated: new Date()
+    };
+    
+    setCurrentChat(newChat);
+    setMessages(newChat.messages);
+    setDatabaseType('sql');
+    
+    try {
+      localStorage.setItem('current-chat', JSON.stringify(newChat));
+      
+      // Add to history
+      setChatHistory(prev => {
+        const updatedHistory = Array.isArray(prev) ? [...prev] : [];
+        updatedHistory.push(newChat);
+        return updatedHistory;
+      });
+      
+      toast.success('New chat created');
+    } catch (error) {
+      console.error("Error creating new chat:", error);
+    }
+  };
+
+  const loadChat = (chatId: string) => {
+    if (!Array.isArray(chatHistory)) return;
+    
+    const chat = chatHistory.find(c => c.id === chatId);
+    if (!chat) return;
+    
+    setCurrentChat(chat);
+    setMessages(Array.isArray(chat.messages) ? chat.messages : []);
+    setDatabaseType(chat.databaseType || 'sql');
+    
+    try {
+      localStorage.setItem('current-chat', JSON.stringify(chat));
+      toast.success(`Loaded: ${chat.name}`);
+    } catch (error) {
+      console.error("Error loading chat:", error);
     }
   };
 
@@ -168,9 +270,11 @@ export const useSessionManager = () => {
     setMessages,
     databaseType,
     setDatabaseType,
-    sessions,
-    currentSession,
+    chatHistory,
+    currentChat,
     handleDatabaseTypeChange,
-    updateMessagesInSession
+    updateMessagesInChat,
+    createNewChat,
+    loadChat
   };
 };
