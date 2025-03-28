@@ -1,8 +1,6 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MessageType } from '@/types/query';
 import { translateToSql, translateToNoSql } from '@/lib/database';
 import { toast } from "@/lib/toast";
@@ -74,24 +72,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <Label>Database Type:</Label>
-          <Select 
-            value={databaseType} 
-            onValueChange={(value) => onDatabaseTypeChange(value as 'sql' | 'nosql')}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Select database type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sql">SQL</SelectItem>
-              <SelectItem value="nosql">NoSQL</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
       <Card className="flex-1 flex flex-col overflow-hidden">
         <CardContent className="flex-1 p-4 overflow-hidden flex flex-col">
           <MessageList 

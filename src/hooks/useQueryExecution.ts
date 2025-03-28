@@ -7,7 +7,7 @@ import { generateMockSqlResults, generateMockNoSqlResults } from '@/lib/database
 export const useQueryExecution = (
   databaseType: 'sql' | 'nosql',
   messages: MessageType[],
-  setMessages: React.Dispatch<React.SetStateAction<MessageType[]>>
+  updateMessagesInSession: (messages: MessageType[]) => void
 ) => {
   // Results state
   const [activeQuery, setActiveQuery] = useState<string | null>(null);
@@ -30,12 +30,13 @@ export const useQueryExecution = (
       
       setIsLoadingResults(false);
       
-      // Mark the query as executed
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.query === query ? { ...msg, isExecuted: true } : msg
-        )
+      // Mark the query as executed and update session
+      const updatedMessages = messages.map(msg => 
+        msg.query === query ? { ...msg, isExecuted: true } : msg
       );
+      
+      // Update messages in session to ensure executed state is saved
+      updateMessagesInSession(updatedMessages);
       
       toast.success('Query executed successfully');
     }, 1000);

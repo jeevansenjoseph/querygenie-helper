@@ -42,15 +42,15 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onExecuteQuery }) =
             <p className="whitespace-pre-wrap break-words">{message.text}</p>
             
             {message.query && (
-              <div className="mt-2 mb-1 relative">
+              <div className="mt-2 mb-1">
                 <div className="bg-background bg-opacity-10 rounded p-2 font-mono text-sm">
-                  <pre className="overflow-x-auto pr-2">{message.query}</pre>
+                  <pre className="overflow-x-auto">{message.query}</pre>
                 </div>
-                <div className="flex space-x-2 mt-2 absolute top-2 right-2">
+                <div className="flex space-x-2 mt-2">
                   <Button 
                     size="sm"
                     variant="secondary"
-                    className="h-7 rounded-full opacity-80 hover:opacity-100"
+                    className="h-7 rounded-full"
                     onClick={() => handleCopyQuery(message.query!)}
                   >
                     <Clipboard className="h-3 w-3 mr-1" />
@@ -59,7 +59,7 @@ const MessageList: React.FC<MessageListProps> = ({ messages, onExecuteQuery }) =
                   <Button 
                     size="sm"
                     variant={message.isExecuted ? "ghost" : "secondary"}
-                    className={`h-7 rounded-full opacity-80 hover:opacity-100 ${message.isExecuted ? 'bg-green-100 text-green-700' : ''}`}
+                    className={`h-7 rounded-full ${message.isExecuted ? 'bg-green-100 text-green-700' : ''}`}
                     onClick={() => onExecuteQuery(message.query!)}
                   >
                     <Sparkles className="h-3 w-3 mr-1" />

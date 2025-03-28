@@ -25,8 +25,7 @@ const QueryGenerator = () => {
 
   // Auto-save effect
   useEffect(() => {
-    // We don't need to call saveSession explicitly
-    // because updateMessagesInSession already updates localStorage
+    // updateMessagesInSession already handles saving to localStorage
   }, [messages, databaseType]);
 
   return (
