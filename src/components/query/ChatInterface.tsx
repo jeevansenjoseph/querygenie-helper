@@ -6,6 +6,7 @@ import { translateToSql, translateToNoSql } from '@/lib/database';
 import { toast } from "@/lib/toast";
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
+import DatabaseTypeSelector from './DatabaseTypeSelector';
 
 interface ChatInterfaceProps {
   messages: MessageType[];
@@ -77,6 +78,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     <div className="flex flex-col h-full">
       <Card className="flex-1 flex flex-col overflow-hidden">
         <CardContent className="flex-1 p-4 overflow-hidden flex flex-col">
+          <DatabaseTypeSelector 
+            databaseType={databaseType} 
+            onDatabaseTypeChange={onDatabaseTypeChange} 
+          />
+          
           <MessageList 
             messages={Array.isArray(messages) ? messages : []} 
             onExecuteQuery={onExecuteQuery} 
