@@ -2,9 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Save } from 'lucide-react';
 import { MessageType } from '@/types/query';
 import { translateToSql, translateToNoSql } from '@/lib/database';
 import { toast } from "@/lib/toast";
@@ -15,7 +13,6 @@ interface ChatInterfaceProps {
   messages: MessageType[];
   databaseType: 'sql' | 'nosql';
   onDatabaseTypeChange: (value: 'sql' | 'nosql') => void;
-  onSaveSession: () => void;
   updateMessages: (messages: MessageType[]) => void;
   onExecuteQuery: (query: string) => void;
 }
@@ -24,7 +21,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
   databaseType,
   onDatabaseTypeChange,
-  onSaveSession,
   updateMessages,
   onExecuteQuery
 }) => {
@@ -58,13 +54,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         generatedQuery = translateToNoSql(userMessage.text, databaseType);
       }
       
+      // Extract just the query without the translation message
+      const queryText = generatedQuery.replace(/^-- Translated query from:.*\n/, '');
+      
       // Add system response with generated query
       const systemResponse: MessageType = {
         id: (Date.now() + 1).toString(),
         text: `Here's your ${databaseType.toUpperCase()} query:`,
         sender: 'system',
         timestamp: new Date(),
-        query: generatedQuery,
+        query: queryText,
         isExecuted: false
       };
       
@@ -91,16 +90,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={onSaveSession}
-          className="gap-2"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save
-        </Button>
       </div>
       
       <Card className="flex-1 flex flex-col overflow-hidden">

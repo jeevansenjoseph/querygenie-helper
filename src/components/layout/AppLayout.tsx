@@ -4,11 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { 
   Database, 
-  Home, 
   LogOut, 
   PanelLeft,
   Terminal,
-  Save,
   Plus
 } from 'lucide-react';
 import { toast } from "@/lib/toast";
@@ -100,15 +98,6 @@ const AppLayout = ({ children }: AppLayoutProps) => {
             {/* Navigation links in the title bar */}
             {user && (
               <div className="ml-8 flex items-center gap-4">
-                <Button
-                  variant={isActive('/') ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => navigate('/')}
-                  className="gap-2"
-                >
-                  <Home className="h-4 w-4" />
-                  <span className="hidden sm:inline">Home</span>
-                </Button>
                 <Button
                   variant={isActive('/query-generator') ? "secondary" : "ghost"}
                   size="sm"

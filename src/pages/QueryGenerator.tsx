@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useSessionManager } from '@/hooks/useSessionManager';
 import { useQueryExecution } from '@/hooks/useQueryExecution';
@@ -12,7 +12,6 @@ const QueryGenerator = () => {
     messages,
     databaseType,
     handleDatabaseTypeChange,
-    saveSession,
     updateMessagesInSession
   } = useSessionManager();
 
@@ -24,6 +23,12 @@ const QueryGenerator = () => {
     handleExportResults
   } = useQueryExecution(databaseType, messages, updateMessagesInSession);
 
+  // Auto-save effect
+  useEffect(() => {
+    // We don't need to call saveSession explicitly
+    // because updateMessagesInSession already updates localStorage
+  }, [messages, databaseType]);
+
   return (
     <AppLayout>
       <div className="container-xl py-4 animate-fade-in">
@@ -33,7 +38,6 @@ const QueryGenerator = () => {
             messages={messages}
             databaseType={databaseType}
             onDatabaseTypeChange={handleDatabaseTypeChange}
-            onSaveSession={saveSession}
             updateMessages={updateMessagesInSession}
             onExecuteQuery={handleExecuteQuery}
           />
