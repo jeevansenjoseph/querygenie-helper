@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageType } from '@/types/query';
 import { translateToSql, translateToNoSql } from '@/lib/database';
 import { toast } from "@/lib/toast";
@@ -92,6 +92,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex flex-col h-full">
       <Card className="flex-1 flex flex-col overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+        <CardHeader className="pb-0">
+          <CardTitle className="text-xl font-semibold text-center">Query Generation</CardTitle>
+        </CardHeader>
         <CardContent className="flex-1 p-4 overflow-hidden flex flex-col">
           <DatabaseTypeSelector 
             databaseType={databaseType} 

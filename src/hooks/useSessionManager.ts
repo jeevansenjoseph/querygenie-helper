@@ -209,7 +209,14 @@ export const useSessionManager = () => {
   };
 
   const createNewChat = () => {
-    const newChat = {
+    const welcomeMessage: MessageType = {
+      id: '1',
+      text: 'Hello! I can help you generate queries. What would you like to know?',
+      sender: 'system' as 'system', // Explicitly type as 'system'
+      timestamp: new Date()
+    };
+
+    const newChat: SessionType = {
       id: Date.now().toString(),
       name: `Chat ${new Date().toLocaleString('en-US', { 
         month: 'short', 
@@ -217,12 +224,7 @@ export const useSessionManager = () => {
         hour: 'numeric',
         minute: 'numeric'
       })}`,
-      messages: [{
-        id: '1',
-        text: 'Hello! I can help you generate queries. What would you like to know?',
-        sender: 'system',
-        timestamp: new Date()
-      }],
+      messages: [welcomeMessage],
       databaseType: 'sql',
       dateCreated: new Date()
     };
