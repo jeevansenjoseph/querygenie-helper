@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, arrow-up } from 'lucide-react';
-import { ArrowUp } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -46,7 +45,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isGenerating }) =>
         {isGenerating ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <ArrowUp className="h-4 w-4" />
+          <Send className="h-4 w-4" />
         )}
       </Button>
     </div>

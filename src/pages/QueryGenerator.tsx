@@ -25,11 +25,11 @@ const QueryGenerator = () => {
 
   // Auto-save effect - only run when messages change
   useEffect(() => {
-    if (Array.isArray(messages)) {
+    if (Array.isArray(messages) && messages.length > 0) {
       // updateMessagesInSession already handles saving to localStorage
       updateMessagesInSession(messages);
     }
-  }, [messages, databaseType, updateMessagesInSession]);
+  }, [messages, updateMessagesInSession]);
 
   return (
     <AppLayout>

@@ -39,28 +39,40 @@ export const useSessionManager = () => {
           // Check for current session
           const currentSessionData = localStorage.getItem('current-session');
           if (currentSessionData) {
-            const parsedCurrentSession = JSON.parse(currentSessionData);
-            setCurrentSession(parsedCurrentSession);
-            
-            // Ensure messages is always an array
-            const sessionMessages = Array.isArray(parsedCurrentSession.messages) 
-              ? parsedCurrentSession.messages 
-              : [];
-            
-            setMessages(sessionMessages);
-            setDatabaseType(parsedCurrentSession.databaseType || 'sql');
+            try {
+              const parsedCurrentSession = JSON.parse(currentSessionData);
+              
+              // Ensure currentSession has valid structure
+              if (parsedCurrentSession && typeof parsedCurrentSession === 'object') {
+                setCurrentSession(parsedCurrentSession);
+                
+                // Ensure messages is always an array
+                const sessionMessages = Array.isArray(parsedCurrentSession.messages) 
+                  ? parsedCurrentSession.messages 
+                  : [];
+                
+                setMessages(sessionMessages);
+                setDatabaseType(parsedCurrentSession.databaseType || 'sql');
+              }
+            } catch (error) {
+              console.error("Error parsing current session:", error);
+              // Fall back to default session
+              localStorage.removeItem('current-session');
+            }
           } else if (parsedSessions.length > 0) {
             // Set current session to the last one if no current session
             const lastSession = parsedSessions[parsedSessions.length - 1];
-            setCurrentSession(lastSession);
-            
-            // Ensure messages is always an array
-            const sessionMessages = Array.isArray(lastSession.messages) 
-              ? lastSession.messages 
-              : [];
-            
-            setMessages(sessionMessages);
-            setDatabaseType(lastSession.databaseType || 'sql');
+            if (lastSession && typeof lastSession === 'object') {
+              setCurrentSession(lastSession);
+              
+              // Ensure messages is always an array
+              const sessionMessages = Array.isArray(lastSession.messages) 
+                ? lastSession.messages 
+                : [];
+              
+              setMessages(sessionMessages);
+              setDatabaseType(lastSession.databaseType || 'sql');
+            }
           }
         }
       }
@@ -74,7 +86,7 @@ export const useSessionManager = () => {
 
   // Save sessions to localStorage when they change
   useEffect(() => {
-    if (sessions.length > 0) {
+    if (Array.isArray(sessions) && sessions.length > 0) {
       try {
         localStorage.setItem('query-sessions', JSON.stringify(sessions));
       } catch (error) {
@@ -97,12 +109,18 @@ export const useSessionManager = () => {
       localStorage.setItem('current-session', JSON.stringify(updatedSession));
       
       // Update session in sessions array
-      setSessions(prev => {
-        const updatedSessions = prev.map(session => 
-          session.id === currentSession.id ? updatedSession : session
-        );
-        return updatedSessions;
-      });
+      if (Array.isArray(sessions)) {
+        setSessions(prev => {
+          if (!Array.isArray(prev)) {
+            return [updatedSession];
+          }
+          
+          const updatedSessions = prev.map(session => 
+            session.id === currentSession.id ? updatedSession : session
+          );
+          return updatedSessions;
+        });
+      }
     } catch (error) {
       console.error("Error updating database type:", error);
     }
@@ -127,17 +145,19 @@ export const useSessionManager = () => {
       localStorage.setItem('current-session', JSON.stringify(updatedSession));
       
       // Update session in sessions array
-      setSessions(prev => {
-        if (!Array.isArray(prev)) {
-          console.error("Sessions state is not an array:", prev);
-          return [updatedSession];
-        }
-        
-        const updatedSessions = prev.map(session => 
-          session.id === currentSession.id ? updatedSession : session
-        );
-        return updatedSessions;
-      });
+      if (Array.isArray(sessions)) {
+        setSessions(prev => {
+          if (!Array.isArray(prev)) {
+            console.error("Sessions state is not an array:", prev);
+            return [updatedSession];
+          }
+          
+          const updatedSessions = prev.map(session => 
+            session.id === currentSession.id ? updatedSession : session
+          );
+          return updatedSessions;
+        });
+      }
     } catch (error) {
       console.error("Error updating messages in session:", error);
     }
